@@ -17,7 +17,7 @@ window.addEventListener('load', () => {
     height: config.height,
     type: Phaser.AUTO,
     backgroundColor: '#333',
-    // transparent: true,
+    transparent: true,
     parent: "game-division",
     scale: {
       mode: Phaser.Scale.FIT,

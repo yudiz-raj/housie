@@ -6,7 +6,7 @@ const config = {
     centerX: width / 2,
     centerY: height / 2,
     version: 1.0,
-    fontFamily: 'HopBall_Font',
+    fontFamily: 'Common_Font',
 };
 
 export default config;

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import assets from '../scripts/assets';
+import config from '../scripts/config';
 
 export default class Button extends Phaser.GameObjects.Container {
     constructor(scene, x, y,
@@ -10,7 +11,7 @@ export default class Button extends Phaser.GameObjects.Container {
             text = '',
             textX = 0,
             textY = 0,
-            fontFamily = 'Impact',
+            fontFamily = config.fontFamily,
             fontSize = '34px',
             color = '#ffffff',
             align = 'center',
