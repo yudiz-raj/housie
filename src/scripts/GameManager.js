@@ -2,94 +2,88 @@ export default class GameManager {
     constructor(oScene) {
         this.oScene = oScene;
         this.numbers = [];
-        this.drawnNumbers = [];
+        this.aDrawnNumbers = [];
+        this.aSelectedNumbers = [];
         this.currentNumber = null;
-        this.playerTicket = [];
-        this.gameState = 'READY';
-        this.isEarlyFive = false;
-        this.isTopLine = false;
-        this.isMiddleLine = false;
-        this.isBottomLine = false;
-        this.isFullHouse = false;
+        this.aPlayerTicket = [];
+        this.aClaimedOptions = [];
     }
-
     initializeGame() {
         this.numbers = Array.from({ length: 90 }, (_, i) => i + 1);
-        this.drawnNumbers = [];
+        this.aDrawnNumbers = [];
+        this.aSelectedNumbers = [];
+        this.aClaimedOptions = [];
         this.generatePlayerTicket();
     }
-
     generatePlayerTicket() {
-        // Generate a 3x9 ticket format
-        this.playerTicket = Array(3).fill(null).map(() => Array(9).fill(null));
-
-        // Generate 5 numbers for each row
+        this.aPlayerTicket = Array(3).fill(null).map(() => Array(9).fill(null));
         for (let row = 0; row < 3; row++) {
             let numbersInRow = 0;
             while (numbersInRow < 5) {
                 const col = Math.floor(Math.random() * 9);
-                if (!this.playerTicket[row][col]) {
-                    // Generate number for specific column (1-10, 11-20, etc.)
+                if (!this.aPlayerTicket[row][col]) {
                     const min = col * 10 + 1;
                     const max = col === 8 ? 90 : (col + 1) * 10;
                     const number = min + Math.floor(Math.random() * (max - min + 1));
-
-                    // Check if number is unique in ticket
-                    if (!this.playerTicket.flat().includes(number)) {
-                        this.playerTicket[row][col] = number;
+                    if (!this.aPlayerTicket.flat().includes(number)) {
+                        this.aPlayerTicket[row][col] = number;
                         numbersInRow++;
                     }
                 }
             }
         }
     }
-
     getPlayerTicket() {
-        return this.playerTicket;
+        return this.aPlayerTicket;
     }
-
     drawNumber() {
         if (this.numbers.length === 0) {
             clearInterval(this.oScene.drawNumberInterval);
             return null;
         }
-
         const randomIndex = Math.floor(Math.random() * this.numbers.length);
         this.currentNumber = this.numbers.splice(randomIndex, 1)[0];
-        this.drawnNumbers.push(this.currentNumber);
+        this.aDrawnNumbers.push(this.currentNumber);
         return this.currentNumber;
     }
-
     checkWin() {
-        // Check Early Five
-        const ticketNumbers = this.playerTicket.flat().filter(n => n !== null);
-        const matchedNumbers = ticketNumbers.filter(num => this.drawnNumbers.includes(num));
-        if (matchedNumbers.length >= 5 && !this.isEarlyFive) {
-            this.isEarlyFive = true;
-            return { type: 'Early Five' };
-        }
-        // Check lines
-        for (let row = 0; row < 3; row++) {
-            const lineNumbers = this.playerTicket[row].filter(n => n !== null);
-            if (lineNumbers.every(num => this.drawnNumbers.includes(num)) && !this[`is${row === 0 ? 'Top' : row === 1 ? 'Middle' : 'Bottom'}Line`]) {
-                this[`is${row === 0 ? 'Top' : row === 1 ? 'Middle' : 'Bottom'}Line`] = true;
-                return {
-                    type: row === 0 ? 'Top Line' :
-                        row === 1 ? 'Middle Line' :
-                            'Bottom Line'
-                };
+        const aAvailableOptions = {};
+        const selectedInRow = [0, 1, 2].map(rowIndex => {
+            return this.aPlayerTicket[rowIndex].filter(num => num && this.aSelectedNumbers.includes(num)).length;
+        });
+        const isTopLineComplete = selectedInRow[0] === 5;
+        const isMiddleLineComplete = selectedInRow[1] === 5;
+        const isBottomLineComplete = selectedInRow[2] === 5;
+        const isFullHouse = this.aSelectedNumbers.length === 15;
+
+        if (!this.aClaimedOptions.includes('isFullHouse')) {
+            if (isTopLineComplete && !this.aClaimedOptions.includes('isTopLine')) {
+                if (!this.aClaimedOptions.includes('isMiddleLine') &&
+                    !this.aClaimedOptions.includes('isBottomLine')) {
+                    aAvailableOptions.isTopLine = true;
+                }
+            }
+            if (isMiddleLineComplete && !this.aClaimedOptions.includes('isMiddleLine')) {
+                if (!this.aClaimedOptions.includes('isTopLine') &&
+                    !this.aClaimedOptions.includes('isBottomLine')) {
+                    aAvailableOptions.isMiddleLine = true;
+                }
+            }
+            if (isBottomLineComplete && !this.aClaimedOptions.includes('isBottomLine')) {
+                if (!this.aClaimedOptions.includes('isTopLine') &&
+                    !this.aClaimedOptions.includes('isMiddleLine')) {
+                    aAvailableOptions.isBottomLine = true;
+                }
+            }
+            if (isFullHouse) {
+                aAvailableOptions.isFullHouse = true;
             }
         }
-        // Check Full House
-        if (ticketNumbers.every(num => this.drawnNumbers.includes(num)) && !this.isFullHouse) {
-            this.isFullHouse = true;
-            return { type: 'Full House' };
+        if (Object.keys(aAvailableOptions).length > 0) {
+            this.oScene.showClaimOptions(aAvailableOptions);
         }
-
-        return null;
     }
-
     getDrawnNumbers() {
-        return this.drawnNumbers;
+        return this.aDrawnNumbers;
     }
 }

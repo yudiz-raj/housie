@@ -20,7 +20,7 @@ export default class Button extends Phaser.GameObjects.Container {
             iconTexture = '',
             iconX = 0,
             iconY = 0,
-        } = {}, onPointerDown) {
+        } = {}, onPointerDown = () => { }) {
         super(scene, x, y);
         scene.add.existing(this);
         this.scene = scene;

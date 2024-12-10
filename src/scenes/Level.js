@@ -8,7 +8,6 @@ export default class Level extends Phaser.Scene {
         super("Level");
         this.oGameManager = null;
         this.currentNumberDisplay = null;
-        this.drawnNumberText = null;
         this.ticketNumbers = [];
     }
     createHeader() {
@@ -21,36 +20,52 @@ export default class Level extends Phaser.Scene {
         this.container_numberDisplay = this.add.container(0, 0);
         const displayBg = this.add.image(config.centerX, 500, assets.ring);
         this.container_numberDisplay.add(displayBg);
-
         this.currentNumberDisplay = this.createText('', config.centerX, 500, {
             fontSize: '72px',
         });
         this.container_numberDisplay.add(this.currentNumberDisplay);
     }
+    createWinSymbols() {
+        this.container_winSymbols = this.add.container(0, 0);
+        this.house_symbol = this.add.image(config.centerX, 1150, assets.house_symbol).setAlpha(0.5).setScale(1.5);
+        this.container_winSymbols.add(this.house_symbol);
+        this.topLine_symbol = this.add.image(config.centerX, 1290, assets.gray_base).setScale(1.5).setAlpha(0.5);
+        this.container_winSymbols.add(this.topLine_symbol);
+        this.middleLine_symbol = this.add.image(config.centerX, 1400, assets.gray_base).setScale(1.5).setAlpha(0.5);
+        this.container_winSymbols.add(this.middleLine_symbol);
+        this.bottomLine_symbol = this.add.image(config.centerX, 1510, assets.gray_base).setScale(1.5).setAlpha(0.5);
+        this.container_winSymbols.add(this.bottomLine_symbol);
+        this.container_ticket.add(this.container_winSymbols);
+    }
     createPlayerTicket() {
-        // this.createText('Your Ticket', config.centerX, 1210, {
-        //     fontSize: '38px',
-        //     fontStyle: 'bold'
-        // });
+        this.container_ticket = this.add.container(0, 0);
         const ticket = this.oGameManager.getPlayerTicket();
         const ticketBase = this.add.image(config.centerX, 1400, assets.ticket_base);
+        this.container_ticket.add(ticketBase);
+        this.createWinSymbols();
+        const container_ticket_numbers = this.add.container(0, 0);
+        this.container_ticket.add(container_ticket_numbers);
         ticket.forEach((row, rowIndex) => {
             for (let col = 0; col < 9; col++) {
                 const number = row[col];
                 const x = (col * 75) + (col < 3 ? 230 : (col > 4 ? 245 : 240));
                 const y = rowIndex * 110 + (1290);
-                // const cell = this.add.image(x, y, assets.blue_base).setScale(1.2);
-
                 if (number) {
                     const numberText = this.createText(number, x, y, {
                         fontSize: '42px',
                         color: '#5A2101'
+                    }).on('pointerdown', () => {
+                        numberText.disableInteractive();
+                        if (!this.oGameManager.aSelectedNumbers.includes(number)) {
+                            this.oGameManager.aSelectedNumbers.push(number);
+                            this.add.image(numberText.x + 2, numberText.y, assets.selection_ring).setScale(1.1);
+                            this.oGameManager.checkWin();
+                        }
                     });
-
+                    container_ticket_numbers.add(numberText);
                     this.ticketNumbers.push({
                         number: number,
                         text: numberText,
-                        // cell: cell
                     });
                 }
             }
@@ -102,6 +117,7 @@ export default class Level extends Phaser.Scene {
         this.container_drawnNumbers = this.add.container(0, 0);
         this.addMask(this.container_drawnNumbers, 1030, 100, 25, 650);
         this.createPlayerTicket();
+        this.container_claimOptions = this.add.container(0, 0);
     }
 
     create() {
@@ -115,25 +131,20 @@ export default class Level extends Phaser.Scene {
         this.drawNumberInterval = setInterval(() => {
             this.oGameManager.drawNumber();
             this.currentNumberDisplay.setText(this.oGameManager.currentNumber);
-            this.highlightTicketNumber(this.oGameManager.currentNumber);
+            this.enableTicketNumber(this.oGameManager.currentNumber);
             this.createDrawnNumber();
-            // const win = this.oGameManager.checkWin();
-            // if (win) {
-            //     this.showWinScreen(win);
-            // }
         }, 1000);
     }
-    highlightTicketNumber(number) {
+    enableTicketNumber(number) {
         const playerTicket = this.oGameManager.getPlayerTicket();
         for (let row = 0; row < playerTicket.length; row++) {
             for (let col = 0; col < playerTicket[row].length; col++) {
                 if (playerTicket[row][col] === number) {
-                    console.log(number, this.ticketNumbers);
-                    const ticketButton = this.ticketNumbers.find(
+                    const ticketNumber = this.ticketNumbers.find(
                         ticket => ticket.number === number
                     );
-                    console.log(ticketButton);
-                    if (ticketButton) this.add.image(ticketButton.text.x + 2, ticketButton.text.y, assets.selection_ring).setScale(1.1);
+                    console.log(ticketNumber);
+                    ticketNumber.text.setInteractive();
                 }
             }
         }
@@ -141,23 +152,58 @@ export default class Level extends Phaser.Scene {
     createDrawnNumber() {
         if (this.container_drawnNumbers.list.length > 15) this.container_drawnNumbers.list.shift();
         const x = this.container_drawnNumbers.list.length ? this.container_drawnNumbers.list[this.container_drawnNumbers.list.length - 1].x + 80 : 1180;
-        const drawnNumber = new Button(this, x, 700, { texture: assets.blue_circle_base, scaleX: 1.2, scaleY: 1.2, text: this.oGameManager.drawnNumbers[this.oGameManager.drawnNumbers.length - 1], color: '#5A2101' });
+        const drawnNumber = new Button(this, x, 700, { texture: assets.blue_circle_base, scaleX: 1.2, scaleY: 1.2, text: this.oGameManager.aDrawnNumbers[this.oGameManager.aDrawnNumbers.length - 1], color: '#5A2101' });
+        drawnNumber.btn_image.disableInteractive();
         this.container_drawnNumbers.add(drawnNumber);
         this.oTweenManager.moveOrScaleTo(this.container_drawnNumbers, { x: this.container_drawnNumbers.x - 80, duration: 300, ease: 'Power2' });
     }
-    showWinScreen(win) {
-        const txt_win = this.createText(`HOUSIE!\nYou Won!\n${win.type}`, config.centerX, 1920, {
-            fontSize: '60px',
-            fontStyle: 'bold',
-        });
-        this.oTweenManager.moveOrScaleTo(txt_win, {
-            y: 1000, duration: 300, ease: 'Power2', callback: () => {
-                this.oTweenManager.moveOrScaleTo(txt_win, {
-                    y: 1920, duration: 300, ease: 'Power2', callback: () => {
-                        txt_win.destroy();
-                    }
+    showClaimOptions(claimOptions) {
+        this.container_claimOptions.removeAll(true);
+        console.log(this.container_claimOptions.list);
+        Object.entries(claimOptions).forEach(([key, value], index) => {
+            if (value && !this.oGameManager.aClaimedOptions.includes(key)) {
+                console.log("key", key);
+                const displayText = key.replace('is', '').split(/(?=[A-Z])/).join(' ');
+                const buttonWidth = 250;
+                const totalWidth = (Object.keys(claimOptions).length - 1) * buttonWidth;
+                const startX = config.centerX - (totalWidth / 2);
+                const btn = new Button(this, startX + (index * buttonWidth), 1700, { texture: assets.btn_orange, scaleX: 0.7, scaleY: 0.7, text: displayText, color: '#5A2101' }, () => {
+                    this.oGameManager.aClaimedOptions.push(key);
+                    btn.btn_image.disableInteractive();
+                    btn.setAlpha(0.5);
+                    this.showWinScreen(key);
+                    this.oGameManager.checkWin();
                 });
+                this.container_claimOptions.add(btn);
             }
         });
+    }
+    showWinScreen(winResult) {
+        this.container_claimOptions.removeAll(true);
+        switch (winResult) {
+            case 'isFullHouse':
+                clearInterval(this.drawNumberInterval);
+                this.showWinAnimation(this.house_symbol);
+                break;
+            case 'isEarlyFive':
+                this.showWinAnimation(this.earlyFive_symbol);
+                break;
+            case 'isTopLine':
+                this.showWinAnimation(this.topLine_symbol);
+                break;
+            case 'isMiddleLine':
+                this.showWinAnimation(this.middleLine_symbol);
+                break;
+            case 'isBottomLine':
+                this.showWinAnimation(this.bottomLine_symbol);
+                break;
+        }
+    }
+    showWinAnimation(symbol) {
+        symbol.setAlpha(1);
+        if (symbol.texture.key.includes('gray')) {
+            symbol.setTintFill(0x00ff00);
+        }
+        this.oTweenManager.moveOrScaleTo(symbol, { scaleX: 1.9, scaleY: 1.9, duration: 300, ease: 'Power2', yoyo: true, repeat: 2 });
     }
 }
