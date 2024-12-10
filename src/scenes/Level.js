@@ -16,8 +16,22 @@ export default class Level extends Phaser.Scene {
             fontStyle: 'bold',
         });
     }
+    instuctionScreen() {
+        this.container_instruction = this.add.container(0, 0);
+        this.countDownText = this.createText('3', config.centerX, config.centerY, {
+            fontSize: '164px',
+            color: '#ff0000',
+        }).setScale(0);
+        this.container_instruction.add(this.countDownText);
+        const instruction_base = this.add.image(config.centerX, config.centerY + 200, assets.gray_base).setScale(3);
+        this.container_instruction.add(instruction_base);
+        this.instructionText = this.createText(' Select a number to claim your prize! claim your prize by completing a row or full house! ', config.centerX, config.centerY + 200, {
+            fontSize: '42px',
+        }).setWordWrapWidth(850);
+        this.container_instruction.add(this.instructionText);
+    }
     createNumberDisplay() {
-        this.container_numberDisplay = this.add.container(0, 0);
+        this.container_numberDisplay = this.add.container(0, 0).setVisible(false);
         const displayBg = this.add.image(config.centerX, 500, assets.ring);
         this.container_numberDisplay.add(displayBg);
         this.currentNumberDisplay = this.createText('', config.centerX, 500, {
@@ -26,7 +40,7 @@ export default class Level extends Phaser.Scene {
         this.container_numberDisplay.add(this.currentNumberDisplay);
     }
     createWinSymbols() {
-        this.container_winSymbols = this.add.container(0, 0);
+        this.container_winSymbols = this.add.container(0, 0).setVisible(false);
         this.house_symbol = this.add.image(config.centerX, 1150, assets.house_symbol).setAlpha(0.5).setScale(1.5);
         this.container_winSymbols.add(this.house_symbol);
         this.topLine_symbol = this.add.image(config.centerX, 1290, assets.gray_base).setScale(1.5).setAlpha(0.5);
@@ -38,7 +52,7 @@ export default class Level extends Phaser.Scene {
         this.container_ticket.add(this.container_winSymbols);
     }
     createPlayerTicket() {
-        this.container_ticket = this.add.container(0, 0);
+        this.container_ticket = this.add.container(0, 0).setVisible(false);
         const ticket = this.oGameManager.getPlayerTicket();
         const ticketBase = this.add.image(config.centerX, 1400, assets.ticket_base);
         this.container_ticket.add(ticketBase);
@@ -113,11 +127,12 @@ export default class Level extends Phaser.Scene {
     editorCreate() {
         this.add.image(config.centerX, config.centerY, assets.background);
         this.createHeader();
+        this.instuctionScreen();
         this.createNumberDisplay();
-        this.container_drawnNumbers = this.add.container(0, 0);
+        this.container_drawnNumbers = this.add.container(0, 0).setVisible(false);
         this.addMask(this.container_drawnNumbers, 1030, 100, 25, 650);
         this.createPlayerTicket();
-        this.container_claimOptions = this.add.container(0, 0);
+        this.container_claimOptions = this.add.container(0, 0).setVisible(false);
     }
 
     create() {
@@ -125,15 +140,42 @@ export default class Level extends Phaser.Scene {
         this.oTweenManager = new TweenManager(this);
         this.oGameManager.initializeGame();
         this.editorCreate();
+        this.startCountDown();
         this.startGame();
+    }
+    startCountDown() {
+        let countDown = 3;
+        this.countDownInterval = setInterval(() => {
+            this.oTweenManager.moveOrScaleTo(this.countDownText, { scaleX: 1, scaleY: 1, duration: 500, yoyo: true, ease: 'Power2' });
+            this.countDownText.setText(countDown);
+            this.countDownText.setStyle({
+                color: countDown === 3 ? '#ff0000' : countDown === 2 ? '#ffff00' : '#00ff00',
+            });
+            if (countDown <= 0) {
+                this.cameras.main.fadeOut(500);
+                clearInterval(this.countDownInterval);
+                this.cameras.main.fadeIn(500);
+                this.container_instruction.setVisible(false);
+                this.container_numberDisplay.setVisible(true);
+                this.container_ticket.setVisible(true);
+                this.container_drawnNumbers.setVisible(true);
+                this.container_winSymbols.setVisible(true);
+                this.container_claimOptions.setVisible(true);
+            }
+            countDown--;
+        }, 1000);
     }
     startGame() {
         this.drawNumberInterval = setInterval(() => {
             this.oGameManager.drawNumber();
-            this.currentNumberDisplay.setText(this.oGameManager.currentNumber);
+            this.oTweenManager.moveOrScaleTo(this.currentNumberDisplay, {
+                scaleX: 0.1, scaleY: 0.1, duration: 500, yoyo: true, ease: 'Quad.easeInOut', onYoyo: () => {
+                    this.currentNumberDisplay.setText(this.oGameManager.currentNumber);
+                }
+            });
             this.enableTicketNumber(this.oGameManager.currentNumber);
             this.createDrawnNumber();
-        }, 1000);
+        }, 4000);
     }
     enableTicketNumber(number) {
         const playerTicket = this.oGameManager.getPlayerTicket();
@@ -143,7 +185,6 @@ export default class Level extends Phaser.Scene {
                     const ticketNumber = this.ticketNumbers.find(
                         ticket => ticket.number === number
                     );
-                    console.log(ticketNumber);
                     ticketNumber.text.setInteractive();
                 }
             }
@@ -185,16 +226,13 @@ export default class Level extends Phaser.Scene {
                 clearInterval(this.drawNumberInterval);
                 this.showWinAnimation(this.house_symbol);
                 break;
-            case 'isEarlyFive':
-                this.showWinAnimation(this.earlyFive_symbol);
-                break;
-            case 'isTopLine':
+            case 'isFirstRow':
                 this.showWinAnimation(this.topLine_symbol);
                 break;
-            case 'isMiddleLine':
+            case 'isSecondRow':
                 this.showWinAnimation(this.middleLine_symbol);
                 break;
-            case 'isBottomLine':
+            case 'isThirdRow':
                 this.showWinAnimation(this.bottomLine_symbol);
                 break;
         }

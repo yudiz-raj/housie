@@ -51,28 +51,28 @@ export default class GameManager {
         const selectedInRow = [0, 1, 2].map(rowIndex => {
             return this.aPlayerTicket[rowIndex].filter(num => num && this.aSelectedNumbers.includes(num)).length;
         });
-        const isTopLineComplete = selectedInRow[0] === 5;
-        const isMiddleLineComplete = selectedInRow[1] === 5;
-        const isBottomLineComplete = selectedInRow[2] === 5;
+        const isFirstRowComplete = selectedInRow[0] === 5;
+        const isSecondRowComplete = selectedInRow[1] === 5;
+        const isThirdRowComplete = selectedInRow[2] === 5;
         const isFullHouse = this.aSelectedNumbers.length === 15;
 
         if (!this.aClaimedOptions.includes('isFullHouse')) {
-            if (isTopLineComplete && !this.aClaimedOptions.includes('isTopLine')) {
-                if (!this.aClaimedOptions.includes('isMiddleLine') &&
-                    !this.aClaimedOptions.includes('isBottomLine')) {
-                    aAvailableOptions.isTopLine = true;
+            if (isFirstRowComplete && !this.aClaimedOptions.includes('isFirstRow')) {
+                if (!this.aClaimedOptions.includes('isSecondRow') &&
+                    !this.aClaimedOptions.includes('isThirdRow')) {
+                    aAvailableOptions.isFirstRow = true;
                 }
             }
-            if (isMiddleLineComplete && !this.aClaimedOptions.includes('isMiddleLine')) {
-                if (!this.aClaimedOptions.includes('isTopLine') &&
-                    !this.aClaimedOptions.includes('isBottomLine')) {
-                    aAvailableOptions.isMiddleLine = true;
+            if (isSecondRowComplete && !this.aClaimedOptions.includes('isSecondRow')) {
+                if (!this.aClaimedOptions.includes('isFirstRow') &&
+                    !this.aClaimedOptions.includes('isThirdRow')) {
+                    aAvailableOptions.isSecondRow = true;
                 }
             }
-            if (isBottomLineComplete && !this.aClaimedOptions.includes('isBottomLine')) {
-                if (!this.aClaimedOptions.includes('isTopLine') &&
-                    !this.aClaimedOptions.includes('isMiddleLine')) {
-                    aAvailableOptions.isBottomLine = true;
+            if (isThirdRowComplete && !this.aClaimedOptions.includes('isThirdRow')) {
+                if (!this.aClaimedOptions.includes('isFirstRow') &&
+                    !this.aClaimedOptions.includes('isSecondRow')) {
+                    aAvailableOptions.isThirdRow = true;
                 }
             }
             if (isFullHouse) {

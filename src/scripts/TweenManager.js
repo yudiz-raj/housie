@@ -14,7 +14,8 @@ export default class TweenManager {
             ease: config.ease ?? 'Linear',
             yoyo: config.yoyo ?? false,
             repeat: config.repeat ?? 0,
-            onComplete: config?.callback
+            onComplete: config?.callback,
+            onYoyo: config?.onYoyo
         })
     }
     alphaTo = (object, config) => {
